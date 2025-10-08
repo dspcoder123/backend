@@ -8,21 +8,12 @@ const https = require('https');
 
 const app = express();
 
-// Store recent requests to prevent duplicates (simple in-memory cache)
-const recentRequests = new Map();
-const DEDUP_WINDOW = 5000; // 5 seconds
-
 // Helper function to clean IP address
 function cleanIP(ip) {
   if (ip && ip.startsWith('::ffff:')) {
     return ip.substring(7);
   }
   return ip;
-}
-
-// Helper function to create dedup key
-function createDedupKey(ip, path, userAgent) {
-  return `${ip}:${path}:${userAgent.substring(0, 50)}`;
 }
 
 // Helper function to get IP location data from ipinfo.io
@@ -186,30 +177,6 @@ app.post('/api/track', async (req, res) => {
     const path = req.body?.path || req.query?.path || '/';
     const userAgent = req.headers['user-agent'] || '';
     const referer = req.headers['referer'] || req.headers['referrer'] || '';
-
-    // Check for duplicate requests
-    const dedupKey = createDedupKey(ip, path, userAgent);
-    const now = Date.now();
-    
-    if (recentRequests.has(dedupKey)) {
-      const lastRequest = recentRequests.get(dedupKey);
-      if (now - lastRequest < DEDUP_WINDOW) {
-        // Duplicate request within window - skip saving
-        return res.status(200).json({ saved: false, reason: 'duplicate' });
-      }
-    }
-    
-    // Record this request
-    recentRequests.set(dedupKey, now);
-    
-    // Clean old entries periodically
-    if (Math.random() < 0.1) { // 10% chance to clean
-      for (const [key, timestamp] of recentRequests.entries()) {
-        if (now - timestamp > DEDUP_WINDOW * 2) {
-          recentRequests.delete(key);
-        }
-      }
-    }
 
     // Get location data for the IP
     const locationData = await getIPLocation(ip);
