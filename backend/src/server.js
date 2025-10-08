@@ -4,6 +4,7 @@ const cors = require('cors');
 const morgan = require('morgan');
 const { connectToDatabase } = require('./db');
 const Visit = require('./models/Visit');
+const https = require('https');
 
 const app = express();
 
@@ -15,6 +16,56 @@ function cleanIP(ip) {
   return ip;
 }
 
+// Helper function to get IP location data from ipinfo.io
+async function getIPLocation(ip) {
+  return new Promise((resolve, reject) => {
+    // Skip location lookup for local/private IPs
+    if (ip === 'localhost' || ip === '::1' || ip === '127.0.0.1' || 
+        ip.startsWith('192.168.') || ip.startsWith('10.') || ip.startsWith('172.')) {
+      resolve(null);
+      return;
+    }
+
+    const options = {
+      hostname: 'ipinfo.io',
+      port: 443,
+      path: `/${ip}/json`,
+      method: 'GET',
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (compatible; IPTracker/1.0)'
+      }
+    };
+
+    const req = https.request(options, (res) => {
+      let data = '';
+      
+      res.on('data', (chunk) => {
+        data += chunk;
+      });
+      
+      res.on('end', () => {
+        try {
+          const locationData = JSON.parse(data);
+          resolve(locationData);
+        } catch (error) {
+          resolve(null);
+        }
+      });
+    });
+
+    req.on('error', (error) => {
+      resolve(null);
+    });
+
+    req.setTimeout(5000, () => {
+      req.destroy();
+      resolve(null);
+    });
+
+    req.end();
+  });
+}
+
 app.set('trust proxy', true);
 app.use(cors({ origin: true, credentials: false }));
 app.use(express.json());
@@ -22,6 +73,22 @@ app.use(morgan('combined'));
 
 app.get('/health', (req, res) => {
   res.json({ ok: true });
+});
+
+// Test endpoint to check IP geolocation
+app.get('/api/test-ip/:ip', async (req, res) => {
+  try {
+    const testIP = req.params.ip;
+    const locationData = await getIPLocation(testIP);
+    
+    res.json({
+      inputIP: testIP,
+      location: locationData,
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to get location data' });
+  }
 });
 
 // Lightweight GET endpoint to be used as an image tracking pixel
@@ -39,7 +106,16 @@ app.get('/api/pixel', async (req, res) => {
     const userAgent = req.headers['user-agent'] || '';
     const referer = req.headers['referer'] || req.headers['referrer'] || '';
 
-    const visit = new Visit({ ipAddress: ip, path, userAgent, referer });
+    // Get location data for the IP
+    const locationData = await getIPLocation(ip);
+    
+    const visit = new Visit({ 
+      ipAddress: ip, 
+      path, 
+      userAgent, 
+      referer,
+      location: locationData // This will be null for local IPs
+    });
     await visit.save();
 
     // 1x1 transparent GIF
@@ -70,7 +146,16 @@ app.get('/api/track', async (req, res) => {
     const userAgent = req.headers['user-agent'] || '';
     const referer = req.headers['referer'] || req.headers['referrer'] || '';
 
-    const visit = new Visit({ ipAddress: ip, path, userAgent, referer });
+    // Get location data for the IP
+    const locationData = await getIPLocation(ip);
+    
+    const visit = new Visit({ 
+      ipAddress: ip, 
+      path, 
+      userAgent, 
+      referer,
+      location: locationData // This will be null for local IPs
+    });
     await visit.save();
 
     res.json({ success: true, path });
@@ -93,7 +178,16 @@ app.post('/api/track', async (req, res) => {
     const userAgent = req.headers['user-agent'] || '';
     const referer = req.headers['referer'] || req.headers['referrer'] || '';
 
-    const visit = new Visit({ ipAddress: ip, path, userAgent, referer });
+    // Get location data for the IP
+    const locationData = await getIPLocation(ip);
+    
+    const visit = new Visit({ 
+      ipAddress: ip, 
+      path, 
+      userAgent, 
+      referer,
+      location: locationData // This will be null for local IPs
+    });
     await visit.save();
 
     res.status(201).json({ saved: true });
