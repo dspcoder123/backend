@@ -16,7 +16,7 @@ function cleanIP(ip) {
   return ip;
 }
 
-// Helper function to get IP location data from ipinfo.io
+// Helper function to get IP location data from ipapi.co
 async function getIPLocation(ip) {
   return new Promise((resolve, reject) => {
     // Skip location lookup for local/private IPs
@@ -27,9 +27,9 @@ async function getIPLocation(ip) {
     }
 
     const options = {
-      hostname: 'ipinfo.io',
+      hostname: 'ipapi.co',
       port: 443,
-      path: `/${ip}/json`,
+      path: `/${ip}/json/`,
       method: 'GET',
       headers: {
         'User-Agent': 'Mozilla/5.0 (compatible; IPTracker/1.0)'
@@ -45,7 +45,19 @@ async function getIPLocation(ip) {
       
       res.on('end', () => {
         try {
-          const locationData = JSON.parse(data);
+          const apiResponse = JSON.parse(data);
+          
+          // Transform ipapi.co response to match our schema (same format as ipinfo.io)
+          const locationData = {
+            ip: apiResponse.ip,
+            city: apiResponse.city,
+            region: apiResponse.region,
+            country: apiResponse.country_code,
+            loc: `${apiResponse.latitude},${apiResponse.longitude}`,
+            org: apiResponse.org,
+            timezone: apiResponse.timezone,
+            postal: apiResponse.postal
+          };
           resolve(locationData);
         } catch (error) {
           resolve(null);
