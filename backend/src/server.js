@@ -6,6 +6,9 @@ const { connectToDatabase } = require('./db');
 const Visit = require('./models/Visit');
 const https = require('https');
 
+// Import auth routes
+const authRoutes = require('./routes/auth');
+
 const app = express();
 
 // Helper function to clean IP address
@@ -82,6 +85,9 @@ app.set('trust proxy', true);
 app.use(cors({ origin: true, credentials: false }));
 app.use(express.json());
 app.use(morgan('combined'));
+
+// Routes
+app.use('/api/auth', authRoutes);
 
 app.get('/health', (req, res) => {
   res.json({ ok: true });
