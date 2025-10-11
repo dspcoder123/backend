@@ -15,7 +15,7 @@ const app = express();
 const allowedOrigins = [
   process.env.FRONTEND_URL,
   "http://localhost:3000",
-  "https://auth-management-iota.vercel.app/"
+  "https://auth-management-iota.vercel.app"
 ].filter(Boolean); // Remove any undefined values
 
 app.use(cors({
