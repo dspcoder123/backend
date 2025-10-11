@@ -23,7 +23,7 @@ const sendVerificationEmail = async (email, name, verificationToken) => {
     console.log('📧 Sending verification email to:', email);
     
     const transporter = createTransporter();
-    const verificationUrl = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/verify-email?token=${verificationToken}`;
+    const verificationUrl = `${process.env.FRONTEND_URL}/verify-email?token=${verificationToken}`;
     
     const mailOptions = {
       from: '"Your App" <dspcoder123@gmail.com>',

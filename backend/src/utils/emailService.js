@@ -25,7 +25,7 @@ const sendVerificationEmail = async (email, name, verificationToken) => {
     console.log('Attempting to send verification email to:', email);
     const transporter = createTransporter();
     
-    const verificationUrl = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/verify-email?token=${verificationToken}`;
+    const verificationUrl = `${process.env.FRONTEND_URL || ' '}/verify-email?token=${verificationToken}`;
     
     const mailOptions = {
       from: `"${process.env.APP_NAME || 'Your App'}" <${process.env.SMTP_USER}>`,
@@ -67,7 +67,7 @@ const sendPasswordResetEmail = async (email, name, resetToken) => {
   try {
     const transporter = createTransporter();
     
-    const resetUrl = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/reset-password?token=${resetToken}`;
+    const resetUrl = `${process.env.FRONTEND_URL}/reset-password?token=${resetToken}`;
     
     const mailOptions = {
       from: `"${process.env.APP_NAME || 'Your App'}" <${process.env.SMTP_USER}>`,
