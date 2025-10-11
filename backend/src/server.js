@@ -11,6 +11,11 @@ const authRoutes = require('./routes/auth');
 
 const app = express();
 
+app.use(cors({
+  origin: "http://localhost:3000",
+  credentials: true,
+}));
+
 // Helper function to clean IP address
 function cleanIP(ip) {
   if (ip && ip.startsWith('::ffff:')) {

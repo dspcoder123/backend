@@ -20,14 +20,38 @@ const UserSchema = new mongoose.Schema(
     },
     mobile: { 
       type: String, 
-      required: true,
+      required: function() {
+        return !this.googleId; // Mobile required only if not Google user
+      },
       trim: true,
-      match: [/^[0-9]{10}$/, 'Please enter a valid 10-digit mobile number']
+      match: [/^[6-9]\d{9}$/, 'Please enter a valid 10-digit mobile number starting with 6-9']
     },
     password: { 
       type: String, 
-      required: true,
-      minlength: 6
+      required: function() {
+        return !this.googleId; // Password required only if not Google user
+      },
+      minlength: 8
+    },
+    // Google OAuth fields
+    googleId: {
+      type: String,
+      unique: true,
+      sparse: true // Allows null values but ensures uniqueness when present
+    },
+    googleEmail: {
+      type: String,
+      lowercase: true,
+      trim: true
+    },
+    profilePicture: {
+      type: String,
+      default: null
+    },
+    authProvider: {
+      type: String,
+      enum: ['local', 'google'],
+      default: 'local'
     },
     verified: { 
       type: Boolean, 

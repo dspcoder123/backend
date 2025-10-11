@@ -2,6 +2,8 @@ const express = require('express');
 const User = require('../models/User');
 const { generateToken, authenticateToken, generateVerificationTokenWithExpiry, generatePasswordResetTokenWithExpiry } = require('../utils/auth');
 const { sendVerificationEmail, sendPasswordResetEmail } = require('../utils/simpleEmailService');
+const { verifyGoogleToken, generateGoogleUserToken } = require('../utils/googleAuth');
+const { validateRegistration, validateLogin } = require('../middleware/validation');
 
 const router = express.Router();
 
@@ -444,6 +446,262 @@ router.get('/profile', authenticateToken, async (req, res) => {
       success: false,
       message: 'Internal server error',
       toastMessage: 'Internal error occurred'
+    });
+  }
+});
+
+// Google OAuth registration/login endpoint
+router.post('/google-auth', async (req, res) => {
+  try {
+    const { idToken } = req.body;
+
+    if (!idToken) {
+      return res.status(400).json({
+        success: false,
+        message: 'Google ID token is required'
+      });
+    }
+
+    // Decode the JWT without verification (DEV mode approach)
+    console.log('🔐 Processing Google OAuth request (DEV mode - no verification)...');
+    
+    try {
+      const base64Url = idToken.split('.')[1];
+      const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+      const jsonPayload = Buffer.from(base64, 'base64').toString('utf8');
+      
+      const payload = JSON.parse(jsonPayload);
+      console.log('📋 Decoded payload:', { email: payload.email, name: payload.name });
+      
+      const { sub: googleId, email, name, picture: profilePicture, email_verified: emailVerified } = payload;
+
+      // Check if user already exists with this Google ID
+      let user = await User.findOne({ googleId });
+
+      if (user) {
+        // User exists, generate token and login
+        const token = generateGoogleUserToken(user._id);
+        
+        return res.json({
+          success: true,
+          message: 'Google login successful',
+          token,
+          user: {
+            id: user._id,
+            name: user.name,
+            email: user.email,
+            mobile: user.mobile,
+            verified: true,
+            authProvider: 'google',
+            profilePicture: user.profilePicture
+          }
+        });
+      }
+
+      // Check if user exists with same email but different auth provider
+      const existingUser = await User.findOne({ email });
+      
+      if (existingUser) {
+        if (existingUser.authProvider === 'local') {
+          return res.status(409).json({
+            success: false,
+            message: 'An account with this email already exists. Please login with your password or use forgot password.',
+            conflict: 'email_exists_local'
+          });
+        }
+      }
+
+      // Create new Google user
+      user = new User({
+        name,
+        email,
+        googleId,
+        googleEmail: email,
+        profilePicture,
+        authProvider: 'google',
+        verified: emailVerified || true // Google emails are pre-verified
+      });
+
+      await user.save();
+
+      // Generate token
+      const token = generateGoogleUserToken(user._id);
+
+      res.status(201).json({
+        success: true,
+        message: 'Google registration successful',
+        token,
+        user: {
+          id: user._id,
+          name: user.name,
+          email: user.email,
+          mobile: user.mobile,
+          verified: true,
+          authProvider: 'google',
+          profilePicture: user.profilePicture
+        }
+      });
+
+    } catch (decodeError) {
+      console.error('❌ Token decode error:', decodeError);
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid token format',
+        error: decodeError.message
+      });
+    }
+
+  } catch (error) {
+    console.error('Google auth error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Internal server error during Google authentication'
+    });
+  }
+});
+
+// Google Login endpoint (for existing users)
+router.post('/google-login', async (req, res) => {
+  try {
+    const { idToken } = req.body;
+
+    if (!idToken) {
+      return res.status(400).json({
+        success: false,
+        message: 'ID token is required'
+      });
+    }
+
+    console.log('🔐 Processing Google Login request...');
+    
+    try {
+      const base64Url = idToken.split('.')[1];
+      const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+      const jsonPayload = Buffer.from(base64, 'base64').toString('utf8');
+      
+      const payload = JSON.parse(jsonPayload);
+      console.log('📋 Decoded payload for login:', { email: payload.email, name: payload.name });
+      
+      const { sub: googleId, email, name, picture: profilePicture } = payload;
+
+      // Check if user exists with this Google ID
+      let user = await User.findOne({ googleId });
+
+      if (!user) {
+        return res.status(404).json({
+          success: false,
+          message: 'User not found. Please register first.',
+          action: 'register_required'
+        });
+      }
+
+      // User exists, generate token and login
+      const token = generateGoogleUserToken(user._id);
+      
+      return res.json({
+        success: true,
+        message: 'Google login successful',
+        token,
+        user: {
+          id: user._id,
+          name: user.name,
+          email: user.email,
+          mobile: user.mobile,
+          verified: true,
+          authProvider: 'google',
+          profilePicture: user.profilePicture || profilePicture
+        }
+      });
+
+    } catch (decodeError) {
+      console.error('❌ Token decode error:', decodeError);
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid token format',
+        error: decodeError.message
+      });
+    }
+
+  } catch (error) {
+    console.error('Google login error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Internal server error during Google login'
+    });
+  }
+});
+
+// Test Google token endpoint (for testing purposes)
+router.post('/test-google-token', async (req, res) => {
+  try {
+    const { idToken } = req.body;
+
+    if (!idToken) {
+      return res.status(400).json({
+        success: false,
+        message: 'Google ID token is required'
+      });
+    }
+
+    const result = await verifyGoogleToken(idToken);
+    
+    res.json({
+      success: result.success,
+      message: result.success ? 'Google token is valid' : 'Google token is invalid',
+      data: result.success ? result.user : null,
+      error: result.error || null
+    });
+
+  } catch (error) {
+    console.error('Test Google token error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Internal server error'
+    });
+  }
+});
+
+// Test endpoint that bypasses token expiry (for development only)
+router.post('/test-google-token-dev', async (req, res) => {
+  try {
+    const { idToken } = req.body;
+    
+    if (!idToken) {
+      return res.status(400).json({
+        success: false,
+        message: 'ID token is required'
+      });
+    }
+    
+    console.log('🧪 Testing Google token (DEV mode - no expiry check)...');
+    
+    // Decode the JWT without verification (for testing only)
+    const base64Url = idToken.split('.')[1];
+    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+    const jsonPayload = Buffer.from(base64, 'base64').toString('utf8');
+    
+    const payload = JSON.parse(jsonPayload);
+    
+    res.json({
+      success: true,
+      message: 'Google token decoded (DEV mode)',
+      data: {
+        email: payload.email,
+        name: payload.name,
+        picture: payload.picture,
+        verified: payload.email_verified,
+        exp: payload.exp,
+        iat: payload.iat,
+        currentTime: Math.floor(Date.now() / 1000),
+        isExpired: payload.exp < Math.floor(Date.now() / 1000)
+      }
+    });
+  } catch (error) {
+    console.error('❌ Google token decode failed:', error.message);
+    res.status(400).json({
+      success: false,
+      message: 'Failed to decode token',
+      error: error.message
     });
   }
 });
