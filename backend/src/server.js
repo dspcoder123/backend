@@ -12,7 +12,7 @@ const authRoutes = require('./routes/auth');
 const app = express();
 
 app.use(cors({
-  origin: "http://localhost:3000",
+  origin: process.env.FRONTEND_URL || "http://localhost:3000",
   credentials: true,
 }));
 
@@ -87,7 +87,6 @@ async function getIPLocation(ip) {
 }
 
 app.set('trust proxy', true);
-app.use(cors({ origin: true, credentials: false }));
 app.use(express.json());
 app.use(morgan('combined'));
 
@@ -230,5 +229,4 @@ connectToDatabase()
   .catch(() => {
     process.exit(1);
   });
-
 

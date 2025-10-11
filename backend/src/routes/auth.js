@@ -84,11 +84,21 @@ router.post('/register', async (req, res) => {
     await user.save();
 
     // Send verification email
-    const emailResult = await sendVerificationEmail(email, name, token);
+    let emailResult;
+    try {
+      emailResult = await sendVerificationEmail(email, name, token);
+    } catch (emailError) {
+      console.error('Error sending verification email:', emailError);
+      return res.status(201).json({
+        success: true,
+        message: 'User registered successfully, but verification email failed to send. Please try logging in to resend.',
+        toastMessage: 'User registered. Verification email failed, try resending.',
+        userId: user._id
+      });
+    }
 
     if (!emailResult.success) {
       console.error('Failed to send verification email:', emailResult.error);
-      // Still return success but mention email issue
       return res.status(201).json({
         success: true,
         message: 'User registered successfully, but verification email failed to send. Please try logging in to resend.',
@@ -464,15 +474,15 @@ router.post('/google-auth', async (req, res) => {
 
     // Decode the JWT without verification (DEV mode approach)
     console.log('🔐 Processing Google OAuth request (DEV mode - no verification)...');
-    
+
     try {
       const base64Url = idToken.split('.')[1];
       const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
       const jsonPayload = Buffer.from(base64, 'base64').toString('utf8');
-      
+
       const payload = JSON.parse(jsonPayload);
       console.log('📋 Decoded payload:', { email: payload.email, name: payload.name });
-      
+
       const { sub: googleId, email, name, picture: profilePicture, email_verified: emailVerified } = payload;
 
       // Check if user already exists with this Google ID
@@ -481,7 +491,7 @@ router.post('/google-auth', async (req, res) => {
       if (user) {
         // User exists, generate token and login
         const token = generateGoogleUserToken(user._id);
-        
+
         return res.json({
           success: true,
           message: 'Google login successful',
@@ -500,7 +510,7 @@ router.post('/google-auth', async (req, res) => {
 
       // Check if user exists with same email but different auth provider
       const existingUser = await User.findOne({ email });
-      
+
       if (existingUser) {
         if (existingUser.authProvider === 'local') {
           return res.status(409).json({
@@ -573,15 +583,15 @@ router.post('/google-login', async (req, res) => {
     }
 
     console.log('🔐 Processing Google Login request...');
-    
+
     try {
       const base64Url = idToken.split('.')[1];
       const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
       const jsonPayload = Buffer.from(base64, 'base64').toString('utf8');
-      
+
       const payload = JSON.parse(jsonPayload);
       console.log('📋 Decoded payload for login:', { email: payload.email, name: payload.name });
-      
+
       const { sub: googleId, email, name, picture: profilePicture } = payload;
 
       // Check if user exists with this Google ID
@@ -597,7 +607,7 @@ router.post('/google-login', async (req, res) => {
 
       // User exists, generate token and login
       const token = generateGoogleUserToken(user._id);
-      
+
       return res.json({
         success: true,
         message: 'Google login successful',
@@ -644,7 +654,7 @@ router.post('/test-google-token', async (req, res) => {
     }
 
     const result = await verifyGoogleToken(idToken);
-    
+
     res.json({
       success: result.success,
       message: result.success ? 'Google token is valid' : 'Google token is invalid',
@@ -665,23 +675,23 @@ router.post('/test-google-token', async (req, res) => {
 router.post('/test-google-token-dev', async (req, res) => {
   try {
     const { idToken } = req.body;
-    
+
     if (!idToken) {
       return res.status(400).json({
         success: false,
         message: 'ID token is required'
       });
     }
-    
+
     console.log('🧪 Testing Google token (DEV mode - no expiry check)...');
-    
+
     // Decode the JWT without verification (for testing only)
     const base64Url = idToken.split('.')[1];
     const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
     const jsonPayload = Buffer.from(base64, 'base64').toString('utf8');
-    
+
     const payload = JSON.parse(jsonPayload);
-    
+
     res.json({
       success: true,
       message: 'Google token decoded (DEV mode)',

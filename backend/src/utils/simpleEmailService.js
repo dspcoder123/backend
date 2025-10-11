@@ -23,7 +23,7 @@ const sendVerificationEmail = async (email, name, verificationToken) => {
     console.log('📧 Sending verification email to:', email);
     
     const transporter = createTransporter();
-    const verificationUrl = `http://localhost:4000/api/auth/verify-email?token=${verificationToken}`;
+    const verificationUrl = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/verify-email?token=${verificationToken}`;
     
     const mailOptions = {
       from: '"Your App" <dspcoder123@gmail.com>',
@@ -75,7 +75,7 @@ const sendPasswordResetEmail = async (email, name, resetToken) => {
     console.log('📧 Sending password reset email to:', email);
     
     const transporter = createTransporter();
-    const resetUrl = `http://localhost:3000/reset-password?token=${resetToken}`;
+    const resetUrl = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/reset-password?token=${resetToken}`;
     
     const mailOptions = {
       from: '"Your App" <dspcoder123@gmail.com>',
