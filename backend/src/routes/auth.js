@@ -83,36 +83,27 @@ router.post('/register', async (req, res) => {
 
     await user.save();
 
-    // Send verification email
-    let emailResult;
-    try {
-      emailResult = await sendVerificationEmail(email, name, token);
-    } catch (emailError) {
-      console.error('Error sending verification email:', emailError);
-      return res.status(201).json({
-        success: true,
-        message: 'User registered successfully, but verification email failed to send. Please try logging in to resend.',
-        toastMessage: 'User registered. Verification email failed, try resending.',
-        userId: user._id
-      });
-    }
-
-    if (!emailResult.success) {
-      console.error('Failed to send verification email:', emailResult.error);
-      return res.status(201).json({
-        success: true,
-        message: 'User registered successfully, but verification email failed to send. Please try logging in to resend.',
-        toastMessage: 'User registered. Verification email failed, try resending.',
-        userId: user._id
-      });
-    }
-
+    // Respond immediately so the client isn't blocked by email delivery
     res.status(201).json({
       success: true,
-      message: 'User registered successfully. Please check your email to verify your account.',
+      message: 'User registered successfully. A verification email will be sent shortly.',
       toastMessage: 'Registration successful! Check your email to verify.',
       userId: user._id
     });
+
+    // Send verification email asynchronously (fire-and-forget). Log failures separately.
+    (async () => {
+      try {
+        const emailResult = await sendVerificationEmail(email, name, token);
+        if (!emailResult.success) {
+          console.error('Failed to send verification email (async):', { userId: user._id, email, error: emailResult.error });
+        } else {
+          console.log('Verification email sent (async) for user:', user._id);
+        }
+      } catch (err) {
+        console.error('Error sending verification email (async):', { userId: user._id, email, err: err && err.message ? err.message : err });
+      }
+    })();
 
   } catch (error) {
     console.error('Registration error:', error);

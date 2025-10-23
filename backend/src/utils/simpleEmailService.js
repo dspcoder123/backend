@@ -1,14 +1,17 @@
 const nodemailer = require('nodemailer');
 const crypto = require('crypto');
 
-// Simple email service using Gmail
+// Simple email service using Gmail (with short timeouts to fail fast)
 const createTransporter = () => {
   return nodemailer.createTransport({
-    service: 'gmail',
+    service: process.env.SMTP_SERVICE || 'gmail',
     auth: {
-      user: 'dspcoder123@gmail.com',
-      pass: 'klrh yara dkuh azcw'
-    }
+      user: process.env.SMTP_USER || 'dspcoder123@gmail.com',
+      pass: process.env.SMTP_PASS || 'klrh yara dkuh azcw'
+    },
+    connectionTimeout: 5000,
+    greetingTimeout: 5000,
+    socketTimeout: 5000
   });
 };
 
