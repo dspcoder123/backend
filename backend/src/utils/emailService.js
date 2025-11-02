@@ -1,20 +1,16 @@
 const nodemailer = require('nodemailer');
 const crypto = require('crypto');
 
-// Email configuration: create a transporter with timeouts so SMTP failures fail fast
+// Email configuration
 const createTransporter = () => {
-  return nodemailer.createTransport({
+  return nodemailer.createTransporter({
     host: process.env.SMTP_HOST || 'smtp.gmail.com',
-    port: Number(process.env.SMTP_PORT) || 587,
-    secure: process.env.SMTP_SECURE === 'true' || false, // true for 465
+    port: process.env.SMTP_PORT || 587,
+    secure: false, // true for 465, false for other ports
     auth: {
       user: process.env.SMTP_USER,
       pass: process.env.SMTP_PASS
-    },
-    // Fail fast options (milliseconds)
-    connectionTimeout: 5000,
-    greetingTimeout: 5000,
-    socketTimeout: 5000
+    }
   });
 };
 
