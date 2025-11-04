@@ -5,6 +5,7 @@ const morgan = require('morgan');
 const { connectToDatabase } = require('./db');
 const Visit = require('./models/Visit');
 const https = require('https');
+const myAiRoutes = require('./myAI/index');
 
 // Import auth routes
 const authRoutes = require('./routes/auth');
@@ -109,6 +110,7 @@ app.use(morgan('combined'));
 
 // Routes
 app.use('/api/auth', authRoutes);
+app.use('/api/myai', myAiRoutes);
 
 app.get('/health', (req, res) => {
   res.json({ ok: true });
