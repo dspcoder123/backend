@@ -10,6 +10,12 @@ const myAiRoutes = require('./myAI/index');
 // Import auth routes
 const authRoutes = require('./routes/auth');
 
+//Telegram Route
+
+const telegramRoutes = require('./telegramAPI/index');
+// Use telegram routes
+
+
 const app = express();
 
 // CORS configuration to allow multiple origins
@@ -111,6 +117,7 @@ app.use(morgan('combined'));
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/myai', myAiRoutes);
+app.use('/api/telegram', telegramRoutes);
 
 app.get('/health', (req, res) => {
   res.json({ ok: true });
