@@ -11,9 +11,9 @@ const myAiRoutes = require('./myAI/index');
 const authRoutes = require('./routes/auth');
 
 //Telegram Route
-
 const telegramRoutes = require('./telegramAPI/index');
-// Use telegram routes
+
+const usersRouter = require("./users");
 
 
 const app = express();
@@ -118,6 +118,8 @@ app.use(morgan('combined'));
 app.use('/api/auth', authRoutes);
 app.use('/api/myai', myAiRoutes);
 app.use('/api/telegram', telegramRoutes);
+app.use("/api/users", usersRouter);
+
 
 app.get('/health', (req, res) => {
   res.json({ ok: true });
