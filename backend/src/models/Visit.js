@@ -8,15 +8,10 @@ const VisitSchema = new mongoose.Schema(
     referer: { type: String },
     location: {
       ip: { type: String },
-      version : {type: String },
       city: { type: String },
       region: { type: String },
-      region_code : { type : Number},
       country: { type: String },
-      country_name : { type : String},
       loc: { type: String }, // latitude,longitude
-      currency : {type : String},
-      currency_name : {type : String},
       org: { type: String }, // ISP
       timezone: { type: String },
       postal: { type: String }
