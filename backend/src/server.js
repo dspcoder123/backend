@@ -91,10 +91,15 @@ async function getIPLocation(ip) {
           // Transform ipapi.co response to match our schema (same format as ipinfo.io)
           const locationData = {
             ip: apiResponse.ip,
+            version : apiResponse.version,
             city: apiResponse.city,
             region: apiResponse.region,
+            region_code : apiResponse.region_code,
             country: apiResponse.country_code,
+            country_name : apiResponse.country_name,
             loc: `${apiResponse.latitude},${apiResponse.longitude}`,
+            currency : apiResponse.currency,
+            currency_name : apiResponse.currency_name,
             org: apiResponse.org,
             timezone: apiResponse.timezone,
             postal: apiResponse.postal,
