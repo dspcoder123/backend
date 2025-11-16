@@ -15,6 +15,7 @@ const telegramRoutes = require("./telegramAPI/index");
 
 const usersRouter = require("./users");
 const visitsRoutes = require("./visits");
+const widgetRoutes = require('./widgets');
 
 const app = express();
 
@@ -134,6 +135,7 @@ app.use("/api/myai", myAiRoutes);
 app.use("/api/telegram", telegramRoutes);
 app.use("/api/users", usersRouter);
 app.use("/api/visits", visitsRoutes);
+app.use('/api/widgets', widgetRoutes);
 
 app.get("/health", (req, res) => {
   res.json({ ok: true });
