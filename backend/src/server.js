@@ -18,6 +18,7 @@ const visitsRoutes = require("./visits");
 const widgetRoutes = require('./widgets');
 const newsRoutes = require('./news');
 const conversionRoutes = require('./conversion');
+const gdprRoutes = require('./routes/gdpr');
 
 const app = express();
 
@@ -140,7 +141,7 @@ app.use("/api/visits", visitsRoutes);
 app.use('/api/widgets', widgetRoutes);
 app.use('/api/news', newsRoutes);
 app.use('/api', conversionRoutes);
-
+app.use('/api/gdpr', gdprRoutes);
 app.get("/health", (req, res) => {
   res.json({ ok: true });
 });
