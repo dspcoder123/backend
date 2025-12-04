@@ -22,7 +22,7 @@ const gdprRoutes = require('./routes/gdpr');
 const explicitRoutes = require("./routes/explicit");
 const imageSearchRoutes = require("./routes/imageSearch");
 const deepfakeRoutes = require("./routes/deepfake");
-
+const assemblyaiRoutes = require("./routes/assemblyai");
 const app = express();
 
 // CORS configuration to allow multiple origins
@@ -147,6 +147,7 @@ app.use('/api', conversionRoutes);
 app.use('/api/gdpr', gdprRoutes);
 app.use('/api', explicitRoutes);
 app.use('/api/image-search', imageSearchRoutes);
+app.use('/api/assemblyai', assemblyaiRoutes);
 app.get("/health", (req, res) => {
   res.json({ ok: true });
 });
