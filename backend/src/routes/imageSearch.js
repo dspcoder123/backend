@@ -1,4 +1,3 @@
-// src/routes/imageSearch.js
 const express = require("express");
 const axios = require("axios");
 const ImageSearch = require("../models/ImageSearch");
@@ -22,9 +21,10 @@ router.post("/save-input", async (req, res) => {
     const { imageUrl, userId } = req.body || {};
 
     if (!isValidUrl(imageUrl)) {
-      return res
-        .status(400)
-        .json({ error: "InvalidImageUrl", message: "Provide a valid http/https imageUrl." });
+      return res.status(400).json({
+        error: "InvalidImageUrl",
+        message: "Provide a valid http/https imageUrl.",
+      });
     }
 
     const rapidKey = process.env.RAPIDAPI_KEY;
@@ -33,50 +33,61 @@ router.post("/save-input", async (req, res) => {
     if (!rapidKey || !rapidHost) {
       return res.status(500).json({
         error: "ConfigError",
-        message: "RapidAPI env vars missing (RAPIDAPI_KEY or RAPIDAPI_REVERSE_IMAGE_HOST).",
+        message:
+          "Reverse image env vars missing (RAPIDAPI_KEY or RAPIDAPI_REVERSE_IMAGE_HOST).",
       });
     }
 
-    // Call RapidAPI reverse image search.
-    // Check the API docs for the exact path & query params; here we assume ?image_url=
-const apiUrl = `https://${rapidHost}/`;
+    // Reverse Image Search API (reverse-image-search1.p.rapidapi.com) [web:203]
+    const apiUrl = `https://${rapidHost}/reverse-image-search`;
 
-let apiRes;
-try {
-  apiRes = await axios.get(apiUrl, {
-    headers: {
-      "x-rapidapi-key": rapidKey,
-      "x-rapidapi-host": rapidHost,
-    },
-    timeout: 20000,
-  });
-} catch (err) {
-  console.error("Reverse image RapidAPI error:", err?.response?.status, err?.message);
-  return res.status(502).json({
-    error: "ReverseImageError",
-    message: "Failed to contact reverse image search provider.",
-  });
-}
+    let apiRes;
+    try {
+      apiRes = await axios.get(apiUrl, {
+        params: {
+          url: imageUrl,
+          limit: 10,
+          safe_search: "off",
+        },
+        headers: {
+          "x-rapidapi-key": rapidKey,
+          "x-rapidapi-host": rapidHost,
+        },
+        timeout: 30000,
+      });
+    } catch (err) {
+      console.error(
+        "Reverse image RapidAPI error:",
+        err?.response?.status,
+        err?.response?.data || err?.message
+      );
+      return res.status(502).json({
+        error: "ReverseImageError",
+        message: "Failed to contact reverse image search provider.",
+      });
+    }
 
-// data has shape from your example
-const data = apiRes.data || {};
+    const data = apiRes.data || {};
 
-const results =
-  (data.Pages || []).map((p) => ({
-    pageUrl: p.Url,
-    imageUrl: (p.MatchingImages && p.MatchingImages[0]) || null,
-    title: p.Title,
-    snippet: null,
-    score: typeof p.Rank === "number" ? p.Rank : null,
-  })) || [];
-
-const doc = new ImageSearch({
-  imageUrl,        // what user entered, just for record
-  userId,
-  provider: "rapidapi-copyseeker-demo",
-  results,
-});
-
+    // Reverse Image Search API returns matches in `data` (array) as you logged.
+    const rawList = Array.isArray(data.data) ? data.data : [];
+    
+    // Map into your schema
+    const results = rawList.map((item) => ({
+      pageUrl: item.link || null,          // page URL
+      imageUrl: item.image || null,        // thumbnail / result image
+      title: item.title || null,
+      snippet: null,                       // API doesn’t send snippet text
+      score: null,                         // no numeric similarity in this API
+    }));
+    
+    const doc = new ImageSearch({
+      imageUrl,
+      userId,
+      provider: "rapidapi-reverse-image-search1",
+      results,
+    });
+    
 
     const saved = await doc.save();
 
