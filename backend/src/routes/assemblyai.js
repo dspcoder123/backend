@@ -75,8 +75,11 @@ router.post("/transcribe", upload.single("audio"), async (req, res) => {
             text: saved.text,
             confidence: saved.confidence,
             audioDuration: saved.audioDuration,
+            summary: saved.summary,        // add
+            sentiment: saved.sentiment,    // add (array from DB)
             createdAt: saved.createdAt,
         });
+
     } catch (err) {
         console.error("AssemblyAI transcribe error:", err?.message || err);
         return res.status(500).json({ error: "AssemblyAIError", message: err?.message || "Transcription failed." });
