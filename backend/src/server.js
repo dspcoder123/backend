@@ -21,6 +21,7 @@ const conversionRoutes = require('./conversion');
 const gdprRoutes = require('./routes/gdpr');
 const explicitRoutes = require("./routes/explicit");
 const imageSearchRoutes = require("./routes/imageSearch");
+const deepfakeRoutes = require("./routes/deepfake");
 
 const app = express();
 
@@ -149,6 +150,7 @@ app.use('/api/image-search', imageSearchRoutes);
 app.get("/health", (req, res) => {
   res.json({ ok: true });
 });
+app.use('/api', deepfakeRoutes);
 
 // Test endpoint to check IP geolocation
 app.get("/api/test-ip/:ip", async (req, res) => {
