@@ -23,6 +23,10 @@ const explicitRoutes = require("./routes/explicit");
 const imageSearchRoutes = require("./routes/imageSearch");
 const deepfakeRoutes = require("./routes/deepfake");
 const assemblyaiRoutes = require("./routes/assemblyai");
+const copyleaksRoutes = require("./routes/copyleaks");
+const writerDetectorRoutes = require("./routes/writeDetector");
+const aiScanRoutes = require("./routes/aiScan");
+const copyleaksFileRoutes = require("./routes/leaksFile");
 const app = express();
 
 // CORS configuration to allow multiple origins
@@ -148,6 +152,10 @@ app.use('/api/gdpr', gdprRoutes);
 app.use('/api', explicitRoutes);
 app.use('/api/image-search', imageSearchRoutes);
 app.use('/api/assemblyai', assemblyaiRoutes);
+app.use('/api', copyleaksRoutes);
+app.use("/api", writerDetectorRoutes);
+app.use("/api", aiScanRoutes);
+app.use("/api", copyleaksFileRoutes);
 app.get("/health", (req, res) => {
   res.json({ ok: true });
 });
