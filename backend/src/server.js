@@ -16,6 +16,20 @@ const telegramRoutes = require("./telegramAPI/index");
 const usersRouter = require("./users");
 const visitsRoutes = require("./visits");
 const widgetRoutes = require('./widgets');
+const newsRoutes = require('./news');
+const conversionRoutes = require('./conversion');
+const gdprRoutes = require('./routes/gdpr');
+const explicitRoutes = require("./routes/explicit");
+const imageSearchRoutes = require("./routes/imageSearch");
+const deepfakeRoutes = require("./routes/deepfake");
+const assemblyaiRoutes = require("./routes/assemblyai");
+const copyleaksRoutes = require("./routes/copyleaks");
+const writerDetectorRoutes = require("./routes/writeDetector");
+const aiScanRoutes = require("./routes/aiScan");
+const copyleaksFileRoutes = require("./routes/leaksFile");
+const imageGenerationRoutes = require('./routes/imageGeneration');
+const aiRoutes = require('./routes/aiRoutes');
+
 
 const app = express();
 
@@ -136,10 +150,23 @@ app.use("/api/telegram", telegramRoutes);
 app.use("/api/users", usersRouter);
 app.use("/api/visits", visitsRoutes);
 app.use('/api/widgets', widgetRoutes);
+app.use('/api/news', newsRoutes);
+app.use('/api', conversionRoutes);
+app.use('/api/gdpr', gdprRoutes);
+app.use('/api', explicitRoutes);
+app.use('/api/image-search', imageSearchRoutes);
+app.use('/api/assemblyai', assemblyaiRoutes);
+app.use('/api', copyleaksRoutes);
+app.use("/api", writerDetectorRoutes);
+app.use("/api", aiScanRoutes);
+app.use("/api", copyleaksFileRoutes);
+app.use('/api/image-generation', imageGenerationRoutes);
+app.use('/api/ai' , aiRoutes);
 
 app.get("/health", (req, res) => {
   res.json({ ok: true });
 });
+app.use('/api', deepfakeRoutes);
 
 // Test endpoint to check IP geolocation
 app.get("/api/test-ip/:ip", async (req, res) => {
