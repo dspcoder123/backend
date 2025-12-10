@@ -29,6 +29,7 @@ const aiScanRoutes = require("./routes/aiScan");
 const copyleaksFileRoutes = require("./routes/leaksFile");
 const imageGenerationRoutes = require('./routes/imageGeneration');
 const aiRoutes = require('./routes/aiRoutes');
+const gladiaRoutes = require('./routes/gladiaAi') ;
 
 
 const app = express();
@@ -162,6 +163,7 @@ app.use("/api", aiScanRoutes);
 app.use("/api", copyleaksFileRoutes);
 app.use('/api/image-generation', imageGenerationRoutes);
 app.use('/api/ai' , aiRoutes);
+app.use('/api/transcriptions', gladiaRoutes);
 
 app.get("/health", (req, res) => {
   res.json({ ok: true });

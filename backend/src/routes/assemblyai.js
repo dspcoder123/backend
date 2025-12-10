@@ -50,6 +50,7 @@ router.post("/transcribe", upload.single("audio"), async (req, res) => {
         const finalData = await waitForCompletion(aaiId);
 
         const doc = new Transcript({
+            providerName: "assemblyai", 
             userId,
             source,
             audioUrl,
